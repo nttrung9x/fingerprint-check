@@ -26,12 +26,15 @@ const html = (stringSet, ...expressionSet) => {
 
 // template helpers
 const note = {
+	unknown: '<span class="blocked">unknown</span>',
 	unsupported: '<span class="blocked">unsupported</span>',
 	blocked: '<span class="blocked">blocked</span>',
 	lied: '<span class="lies">lied</span>'
 }
 const pluralify = len => len > 1 ? 's' : ''
-const count = arr => arr && arr.constructor.name === 'Array' ? ''+(arr.length) : '0'
+const count = arr => arr && arr.constructor.name === 'Array' ? '' + (arr.length) : '0'
+
+const getMismatchStyle = (a, b) => b.map((char, i) => char != a[i] ? `<span class="bold-fail">${char}</span>` : char).join('')
 
 // modal component
 const modal = (name, result, linkname = 'details') => {
@@ -64,4 +67,4 @@ const modal = (name, result, linkname = 'details') => {
 	`
 }
 
-export { patch, html, note, pluralify, count, modal }
+export { patch, html, note, pluralify, getMismatchStyle, count, modal }

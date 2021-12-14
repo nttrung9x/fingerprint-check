@@ -77,17 +77,19 @@
 		Math.atan(2) == 1.1071487177940904 &&
 		Math.atanh(0.5) == 0.5493061443340548 &&
 		Math.cbrt(Math.PI) == 1.4645918875615231 &&
-		Math.cos(21*Math.LN2) == -0.4067775970251724 &&
-		Math.cosh(492*Math.LOG2E) == 9.199870313877772e+307 &&
+		Math.cos(21 * Math.LN2) == -0.4067775970251724 &&
+		Math.cosh(492 * Math.LOG2E) == 9.199870313877772e+307 &&
 		Math.expm1(1) == 1.718281828459045 &&
-		Math.hypot(6*Math.PI, -100) == 101.76102278593319 &&
+		Math.hypot(6 * Math.PI, -100) == 101.76102278593319 &&
 		Math.log10(Math.PI) == 0.4971498726941338 &&
 		Math.sin(Math.PI) == 1.2246467991473532e-16 &&
 		Math.sinh(Math.PI) == 11.548739357257748 &&
-		Math.tan(10*Math.LOG2E) == -3.3537128705376014 &&
+		Math.tan(10 * Math.LOG2E) == -3.3537128705376014 &&
 		Math.tanh(0.123) == 0.12238344189440875 &&
 		Math.pow(Math.PI, -100) == 1.9275814160560204e-50
 	)
+
+	const getFirefox = () => 3.141592653589793 ** -100 == 1.9275814160560185e-50
 
 	const getPrototypeLies = iframeWindow => {
 		// Lie Tests
@@ -183,6 +185,13 @@
 		// extending the function on a fake class should throw a TypeError and message "not a constructor"
 		const getClassExtendsTypeErrorLie = apiFunction => {
 			try {
+				const shouldExitInSafari13 = (
+					/version\/13/i.test((navigator || {}).userAgent) &&
+					((3.141592653589793 ** -100) == 1.9275814160560206e-50)
+				)
+				if (shouldExitInSafari13) {
+					return false
+				}
 				class Fake extends apiFunction { }
 				return true
 			} catch (error) {
@@ -331,7 +340,57 @@
 				return !validStack
 			}
 		}
-			
+
+		// arguments or caller should not throw 'incompatible Proxy' TypeError
+		const tryIncompatibleProxy = (isFirefox, fn) => {
+			try {
+				fn()
+				return true
+			} catch (error) {
+				return (
+					error.constructor.name != 'TypeError' ||
+					(isFirefox && /incompatible\sProxy/.test(error.message)) ? true : false
+				)
+			}
+		}
+		const getIncompatibleProxyTypeErrorLie = apiFunction => {
+			const isFirefox = getFirefox()
+			return (
+				tryIncompatibleProxy(isFirefox, () => apiFunction.arguments) ||
+				tryIncompatibleProxy(isFirefox, () => apiFunction.arguments)
+			)
+		}
+		const getToStringIncompatibleProxyTypeErrorLie = apiFunction => {
+			const isFirefox = getFirefox()
+			return (
+				tryIncompatibleProxy(isFirefox, () => apiFunction.toString.arguments) ||
+				tryIncompatibleProxy(isFirefox, () => apiFunction.toString.caller)
+			)
+		}
+
+		// setting prototype to itself should not throw 'Uncaught InternalError: too much recursion'
+		/*
+			Trying to bypass this? We can also check if empty Proxies return 'Uncaught InternalError: too much recursion'
+			x = new Proxy({}, {})
+			Object.setPrototypeOf(x, x)+''
+		*/
+		const getTooMuchRecursionLie = apiFunction => {
+			const isFirefox = getFirefox()
+			const nativeProto = Object.getPrototypeOf(apiFunction)
+			try {
+				Object.setPrototypeOf(apiFunction, apiFunction) + ''
+				return true
+			} catch (error) {
+				return (
+					error.constructor.name != 'TypeError' ||
+						(isFirefox && /too much recursion/.test(error.message)) ? true : false
+				)
+			} finally {
+				// restore proto
+				Object.setPrototypeOf(apiFunction, nativeProto)
+			}
+		}
+
 		// API Function Test
 		const getLies = (apiFunction, proto, obj = null) => {
 			if (typeof apiFunction != 'function') {
@@ -357,7 +416,10 @@
 				[`l: descriptor keys should only contain "name" and "length"`]: getDescriptorKeysLie(apiFunction),
 				[`m: own property names should only contain "name" and "length"`]: getOwnPropertyNamesLie(apiFunction),
 				[`n: own keys names should only contain "name" and "length"`]: getOwnKeysLie(apiFunction),
-				[`o: calling toString() on an object created from the function should throw a TypeError`]: getNewObjectToStringTypeErrorLie(apiFunction)
+				[`o: calling toString() on an object created from the function should throw a TypeError`]: getNewObjectToStringTypeErrorLie(apiFunction),
+				[`p: arguments or caller should not throw 'incompatible Proxy' TypeError`]: getIncompatibleProxyTypeErrorLie(apiFunction),
+				[`q: arguments or caller on toString should not throw 'incompatible Proxy' TypeError`]: getToStringIncompatibleProxyTypeErrorLie(apiFunction),
+				[`r: setting prototype to itself should throw a TypeError not 'InternalError: too much recursion'`]: getTooMuchRecursionLie(apiFunction)
 			}
 			const lieTypes = Object.keys(lies).filter(key => !!lies[key])
 			return {
@@ -388,8 +450,10 @@
 					}
 
 					const interfaceObject = !!obj.prototype ? obj.prototype : obj
-					Object.getOwnPropertyNames(interfaceObject)
-						.forEach(name => {
+						;[...new Set([
+							...Object.getOwnPropertyNames(interfaceObject),
+							...Object.keys(interfaceObject) // backup
+						])].sort().forEach(name => {
 							const skip = (
 								name == 'constructor' ||
 								(target.length && !new Set(target).has(name)) ||
@@ -493,6 +557,7 @@
 		searchLies(() => Range)
 		searchLies(() => Intl.RelativeTimeFormat)
 		searchLies(() => Screen)
+		searchLies(() => speechSynthesis)
 		searchLies(() => SVGRect)
 		searchLies(() => TextMetrics)
 		searchLies(() => WebGLRenderingContext)
@@ -505,8 +570,7 @@
 			MimeType
 			MimeTypeArray
 			Worker
-			History
-			SpeechSynthesis 
+			History 
 		*/
 
 		// return lies list and detail 
@@ -532,9 +596,7 @@
 	//lieList.includes('HTMLCanvasElement.toDataURL') // returns true or false
 	//lieDetail['HTMLCanvasElement.toDataURL'] // returns the list of lies
 
-	//console.log(propsSearched)
-	//console.log(lieList)
-	//console.log(lieDetail)
+	console.log(lieDetail)
 
 	const [
 		searchedHash,

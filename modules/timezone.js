@@ -526,7 +526,13 @@ const decryptLocation = ({ year, timeZone, phantomIntl, phantomDate }) => {
 	return decrypted
 }
 
-const formatLocation = x => x.replace(/_/, ' ').split('/').join(', ') 
+const formatLocation = x => {
+	try {
+		return x.replace(/_/, ' ').split('/').join(', ')
+	}
+	catch (error) {}
+	return x
+}
 
 export const getTimezone = async imports => {
 
@@ -541,13 +547,14 @@ export const getTimezone = async imports => {
 
 	try {
 		const start = performance.now()
+		
 		let lied = (
 			lieProps['Date.getTimezoneOffset'] ||
 			lieProps['Intl.DateTimeFormat.resolvedOptions'] ||
 			lieProps['Intl.RelativeTimeFormat.resolvedOptions']
 		) || false
 		const phantomDate = phantomDarkness ? phantomDarkness.Date : Date
-		const phantomIntl = phantomDarkness ? phantomDarkness.Intl : Date
+		const phantomIntl = phantomDarkness ? phantomDarkness.Intl : Intl
 
 		const year = 1113
 		const { timeZone } = phantomIntl.DateTimeFormat().resolvedOptions()
@@ -571,4 +578,37 @@ export const getTimezone = async imports => {
 		captureError(error)
 		return
 	}
+}
+
+export const timezoneHTML = ({ fp, note, hashSlice }) => {
+	if (!fp.timezone) {
+		return `
+		<div class="col-four undefined">
+			<strong>Timezone</strong>
+			<div class="block-text">${note.blocked}</div>
+		</div>`
+	}
+	const {
+		timezone: {
+			$hash,
+			zone,
+			location,
+			locationMeasured,
+			locationEpoch,
+			offset,
+			offsetComputed,
+			lied
+		}
+	} = fp
+	return `
+	<div class="col-four${lied ? ' rejected' : ''}">
+		<strong>Timezone</strong><span class="${lied ? 'lies ' : ''}hash">${hashSlice($hash)}</span>
+		<div class="block-text help"  title="Date\nDate.getTimezoneOffset\nIntl.DateTimeFormat">
+			${zone ? zone : ''}
+			<br>${location != locationMeasured ? locationMeasured : location}
+			<br>${locationEpoch}
+			<br>${offset != offsetComputed ? offsetComputed : offset}
+		</div>
+	</div>
+	`
 }

@@ -33,7 +33,30 @@ export const getClientRects = async imports => {
 				y: domRect.y
 			}
 		}
-		let lied = lieProps['Element.getClientRects'] || false // detect lies
+		let lied = (
+			lieProps['Element.getClientRects'] ||
+			lieProps['Element.getBoundingClientRect'] ||
+			lieProps['Range.getClientRects'] ||
+			lieProps['Range.getBoundingClientRect']
+		) || false // detect lies
+		
+		const getBestRect = (lieProps, doc, el) => {
+			let range
+			if (!lieProps['Element.getClientRects']) {
+				return el.getClientRects()[0]
+			}
+			else if (!lieProps['Element.getBoundingClientRect']) {
+				return el.getBoundingClientRect()
+			}
+			else if (!lieProps['Range.getClientRects']) {
+				range = doc.createRange()
+				range.selectNode(el)
+				return range.getClientRects()[0]
+			}
+			range = doc.createRange()
+			range.selectNode(el)
+			return range.getBoundingClientRect()
+		}
 					
 		const doc = phantomDarkness ? phantomDarkness.document : document
 
@@ -169,26 +192,145 @@ export const getClientRects = async imports => {
 		`)
 
 		// get emojis
+		const systemEmojis = [
+			[128512],
+			[9786],
+			[129333,8205,9794,65039],
+			[9832],
+			[9784],
+			[9895],
+			[8265],
+			[8505],
+			[127987,65039,8205,9895,65039],
+			[129394],
+			[9785],
+			[9760],
+			[129489,8205,129456],
+			[129487,8205,9794,65039],
+			[9975],
+			[129489,8205,129309,8205,129489],
+			[9752],
+			[9968],
+			[9961],
+			[9972],
+			[9992],
+			[9201],
+			[9928],
+			[9730],
+			[9969],
+			[9731],
+			[9732],
+			[9976],
+			[9823],
+			[9937],
+			[9000],
+			[9993],
+			[9999],
+			[10002],
+			[9986],
+			[9935],
+			[9874],
+			[9876],
+			[9881],
+			[9939],
+			[9879],
+			[9904],
+			[9905],
+			[9888],
+			[9762],
+			[9763],
+			[11014],
+			[8599],
+			[10145],
+			[11013],
+			[9883],
+			[10017],
+			[10013],
+			[9766],
+			[9654],
+			[9197],
+			[9199],
+			[9167],
+			[9792],
+			[9794],
+			[10006],
+			[12336],
+			[9877],
+			[9884],
+			[10004],
+			[10035],
+			[10055],
+			[9724],
+			[9642],
+			[10083],
+			[10084],
+			[9996],
+			[9757],
+			[9997],
+			[10052],
+			[9878],
+			[8618],
+			[9775],
+			[9770],
+			[9774],
+			[9745],
+			[10036],
+			[127344],
+			[127359]
+		]
+
+		const pattern = new Set()
 		const emojiDiv = doc.getElementById('emoji')
-		const emojiRects = emojis
-			.slice(151, 200) // limit to improve performance
+		const emojiRects = systemEmojis
 			.map(emojiCode => {
 				const emoji = String.fromCodePoint(...emojiCode)
 				emojiDiv.innerHTML = emoji
-				const domRect = emojiDiv.getClientRects()[0]
-				return {emoji,...toNativeObject(domRect)}
+				const { height, width } = getBestRect(lieProps, doc, emojiDiv)
+				return { emoji, width, height }
 			})
+
+		// get emoji set and system
+		const emojiSet = emojiRects
+			.filter(emoji => {
+				const dimensions = `${emoji.width}, ${emoji.heigt}`
+				if (pattern.has(dimensions)) {
+					return false
+				}
+				pattern.add(dimensions)
+				return true
+			})
+			.map(emoji => {
+				return emoji.emoji
+			})
+		const emojiSystem = hashMini(emojiSet)
 		
 		// get clientRects
+		const range = document.createRange()
 		const rectElems = doc.getElementsByClassName('rects')
-		const clientRects = [...rectElems].map(el => {
+
+		const elementClientRects = [...rectElems].map(el => {
 			return toNativeObject(el.getClientRects()[0])
 		})
+
+		const elementBoundingClientRect = [...rectElems].map(el => {
+			return toNativeObject(el.getBoundingClientRect())
+		})
+		
+		const rangeClientRects = [...rectElems].map(el => {
+			range.selectNode(el)
+			return toNativeObject(range.getClientRects()[0])
+		})
+
+		const rangeBoundingClientRect = [...rectElems].map(el => {
+			range.selectNode(el)
+			return toNativeObject(el.getBoundingClientRect())
+		})
+
 
 		// detect failed shift calculation
 		// inspired by https://arkenfox.github.io/TZP
 		const rect4 = [...rectElems][3]
-		const { top: initialTop } = clientRects[3]
+		const { top: initialTop } = elementClientRects[3]
 		rect4.classList.add('shift-dom-rect')
 		const { top: shiftedTop } = toNativeObject(rect4.getClientRects()[0])
 		rect4.classList.remove('shift-dom-rect')
@@ -202,7 +344,7 @@ export const getClientRects = async imports => {
 
 		// detect failed math calculation lie
 		let mathLie = false
-		clientRects.forEach(rect => {
+		elementClientRects.forEach(rect => {
 			const { right, left, width, bottom, top, height, x, y } = rect
 			if (
 				right - left != width ||
@@ -220,19 +362,109 @@ export const getClientRects = async imports => {
 		}
 		
 		// detect equal elements mismatch lie
-		const { right: right1, left: left1 } = clientRects[10]
-		const { right: right2, left: left2 } = clientRects[11]
+		const { right: right1, left: left1 } = elementClientRects[10]
+		const { right: right2, left: left2 } = elementClientRects[11]
 		if (right1 != right2 || left1 != left2) {
 			documentLie('Element.getClientRects', 'equal elements mismatch')
 			lied = true
 		}
 					
 		logTestResult({ start, test: 'rects', passed: true })
-		return { emojiRects, clientRects, lied }
+		return {
+			emojiRects,
+			emojiSet,
+			emojiSystem,
+			elementClientRects,
+			elementBoundingClientRect,
+			rangeClientRects,
+			rangeBoundingClientRect,
+			lied
+		}
 	}
 	catch (error) {
 		logTestResult({ test: 'rects', passed: false })
 		captureError(error)
 		return
 	}
+}
+
+export const clientRectsHTML = ({ fp, note, modal, getMismatchStyle, hashMini, hashSlice }) => {
+	if (!fp.clientRects) {
+		return `
+		<div class="col-six undefined">
+			<strong>DOMRect</strong>
+			<div>elems client: ${note.blocked}</div>
+			<div>range client: ${note.blocked}</div>
+			<div>elems bounding: ${note.blocked}</div>
+			<div>range bounding: ${note.blocked}</div>
+			<div>emojis v13.0: ${note.blocked}</div>
+			<div>emoji set:</div>
+			div class="block-text">${note.blocked}</div>
+		</div>`
+	}
+	const {
+		clientRects: {
+			$hash,
+			elementClientRects,
+			elementBoundingClientRect,
+			rangeClientRects,
+			rangeBoundingClientRect,
+			emojiRects,
+			emojiSet,
+			emojiSystem,
+			lied
+		}
+	} = fp
+	const id = 'creep-client-rects'
+	const getRectHash = rect => {
+		const {emoji,...excludeEmoji} = rect
+		return hashMini(excludeEmoji)
+	}
+
+	// compute mismatch style
+	const getRectSum = rect => Object.keys(rect).reduce((acc, key) => acc += rect[key], 0)
+	const reduceRectSum = n => (''+n).split('.').reduce((acc, s) => acc += +s, 0)
+	const computeMismatchStyle = rects => {
+		if (!rects || !rects.length) {
+			return
+		}
+		const exptectedSum = rects.reduce((acc, rect) => {
+			const { right, left, width, bottom, top, height, x, y } = rect
+			const expected = {
+				width: right - left,
+				height: bottom - top,
+				right: left + width,
+				left: right - width,
+				bottom: top + height,
+				top: bottom - height,
+				x: right - width,
+				y: bottom - height
+			}
+			return acc += getRectSum(expected)
+		}, 0)
+		const actualSum = rects.reduce((acc, rect) => acc += getRectSum(rect), 0)
+		const expected = reduceRectSum(exptectedSum)
+		const actual = reduceRectSum(actualSum)
+		return getMismatchStyle((''+actual).split(''), (''+expected).split(''))
+	}
+	
+
+	return `
+	<div class="col-six${lied ? ' rejected' : ''}">
+		<strong>DOMRect</strong><span class="${lied ? 'lies ' : ''}hash">${hashSlice($hash)}</span>
+		<div class="help" title="Element.getClientRects()">elems client: ${computeMismatchStyle(elementClientRects)}</div>
+		<div class="help" title="Range.getClientRects()">range client: ${computeMismatchStyle(rangeClientRects)}</div>
+		<div class="help" title="Element.getBoundingClientRect()">elems bounding: ${computeMismatchStyle(elementBoundingClientRect)}</div>
+		<div class="help" title="Range.getBoundingClientRect()">range bounding: ${computeMismatchStyle(rangeBoundingClientRect)}</div>
+		<div>emojis v13.0: ${
+			modal(
+				`${id}-emojis`,
+				`<div>${emojiRects.map(rect => `${rect.emoji}: ${getRectHash(rect)}`).join('<br>')}</div>`,
+				hashMini(emojiRects)
+			)
+		}</div>
+		<div>emoji set:</div>
+		<div class="block-text">${emojiSet.join('')}</div>
+	</div>
+	`
 }

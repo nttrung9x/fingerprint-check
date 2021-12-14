@@ -137,7 +137,7 @@ const pnames = new Set([
 const draw = gl => {
 	//gl.clearColor(0.47, 0.7, 0.78, 1)
 	gl.clear(gl.COLOR_BUFFER_BIT)
-	
+
 	// based on https://github.com/Valve/fingerprintjs2/blob/master/fingerprint2.js
 	const vertexPosBuffer = gl.createBuffer()
 	gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer)
@@ -202,7 +202,9 @@ export const getCanvasWebgl = async imports => {
 			lieProps,
 			phantomDarkness,
 			dragonOfDeath,
-			logTestResult
+			logTestResult,
+			compressWebGLRenderer,
+			getWebGLRendererConfidence 
 		}
 	} = imports
 
@@ -211,13 +213,16 @@ export const getCanvasWebgl = async imports => {
 		// detect lies
 		const dataLie = lieProps['HTMLCanvasElement.toDataURL']
 		const contextLie = lieProps['HTMLCanvasElement.getContext']
-		let lied = (
-			dataLie ||
-			contextLie ||
+		const parameterOrExtensionLie = (
 			lieProps['WebGLRenderingContext.getParameter'] ||
 			lieProps['WebGL2RenderingContext.getParameter'] ||
 			lieProps['WebGLRenderingContext.getExtension'] ||
-			lieProps['WebGL2RenderingContext.getExtension'] ||
+			lieProps['WebGL2RenderingContext.getExtension']
+		)
+		let lied = (
+			dataLie ||
+			contextLie ||
+			parameterOrExtensionLie ||
 			lieProps['WebGLRenderingContext.getSupportedExtensions'] ||
 			lieProps['WebGL2RenderingContext.getSupportedExtensions']
 		) || false
@@ -225,7 +230,7 @@ export const getCanvasWebgl = async imports => {
 			dragonOfDeath.document.createElement('canvas').toDataURL() != document.createElement('canvas').toDataURL()) {
 			lied = true
 		}
-		
+
 		// create canvas context
 		const win = phantomDarkness ? phantomDarkness : window
 		const doc = win.document
@@ -237,7 +242,7 @@ export const getCanvasWebgl = async imports => {
 			canvas = doc.createElement('canvas')
 			canvas2 = doc.createElement('canvas')
 		}
-	
+
 		const getContext = (canvas, contextType) => {
 			try {
 				if (contextType == 'webgl2') {
@@ -387,24 +392,24 @@ export const getCanvasWebgl = async imports => {
 		}
 
 		// get data
-		const params = {...getParams(gl), ...getUnmasked(gl)}
-		const params2 = {...getParams(gl2), ...getUnmasked(gl2)}
+		const params = { ...getParams(gl), ...getUnmasked(gl) }
+		const params2 = { ...getParams(gl2), ...getUnmasked(gl2) }
 		const mismatch = Object.keys(params2)
-			.filter(key => !!params[key] && ''+params[key] != ''+params2[key])
+			.filter(key => !!params[key] && '' + params[key] != '' + params2[key])
 			.toString()
 			.replace('SHADING_LANGUAGE_VERSION,VERSION', '')
 		if (mismatch) {
 			sendToTrash('webgl/webgl2 mirrored params mismatch', mismatch)
 		}
-		
+
 		const data = {
-			extensions: [...getSupportedExtensions(gl),...getSupportedExtensions(gl2)],
+			extensions: [...getSupportedExtensions(gl), ...getSupportedExtensions(gl2)],
 			pixels: getPixels(gl),
 			pixels2: getPixels(gl2),
 			dataURI: getDataURI('webgl'),
 			dataURI2: getDataURI('webgl2'),
 			parameters: {
-				...{...params, ...params2},
+				...{ ...params, ...params2 },
 				...{
 					antialias: gl.getContextAttributes() ? gl.getContextAttributes().antialias : undefined,
 					MAX_VIEWPORT_DIMS: attempt(() => [...gl.getParameter(gl.MAX_VIEWPORT_DIMS)]),
@@ -417,15 +422,108 @@ export const getCanvasWebgl = async imports => {
 					})
 				}
 			},
+			parameterOrExtensionLie,
 			lied
 		}
 
 		logTestResult({ start, test: 'webgl', passed: true })
-		return { ...data }
+		return {
+			...data,
+			gpu: {
+				...(getWebGLRendererConfidence((data.parameters||{}).UNMASKED_RENDERER_WEBGL) || {}),
+				compressedGPU: compressWebGLRenderer((data.parameters||{}).UNMASKED_RENDERER_WEBGL)
+			}
+		}
 	}
 	catch (error) {
 		logTestResult({ test: 'webgl', passed: false })
 		captureError(error)
 		return
 	}
+}
+
+export const webglHTML = ({ fp, note, count, modal, hashMini, hashSlice }) => {
+	if (!fp.canvasWebgl) {
+		return `
+		<div class="col-four undefined">
+			<strong>WebGL</strong>
+			<div>images: ${note.blocked}</div>
+			<div>pixels: ${note.blocked}</div>
+			<div>params (0): ${note.blocked}</div>
+			<div>exts (0): ${note.blocked}</div>
+		</div>
+		<div class="col-four undefined">
+			<div>gpu:</div>
+			<div class="block-text">${note.blocked}</div>
+		</div>
+		<div class="col-four undefined"><image /></div>`
+	}
+	const { canvasWebgl: data } = fp
+	const id = 'creep-canvas-webgl'
+	
+	const {
+		$hash,
+		dataURI,
+		dataURI2,
+		pixels,
+		pixels2,
+		lied,
+		extensions,
+		parameters,
+		gpu
+	} = data || {}
+
+	const {
+		parts,
+		warnings,
+		gibbers,
+		confidence,
+		grade: confidenceGrade,
+		compressedGPU
+	} = gpu || {}
+	
+	const paramKeys = parameters ? Object.keys(parameters).sort() : []
+	
+	return `
+	<div class="col-four${lied ? ' rejected' : ''}">
+		<strong>WebGL</strong><span class="${lied ? 'lies ' : ''}hash">${hashSlice($hash)}</span>
+		<div>images:${
+			!dataURI ? ' '+note.blocked : `<span class="sub-hash">${hashMini(dataURI)}</span>${!dataURI2 || dataURI == dataURI2 ? '' : `<span class="sub-hash">${hashMini(dataURI2)}</span>`}`
+		}</div>
+		<div>pixels:${
+			!pixels ? ' '+note.blocked : `<span class="sub-hash">${hashSlice(pixels)}</span>${!pixels2 || pixels == pixels2 ? '' : `<span class="sub-hash">${hashSlice(pixels2)}</span>`}`
+		}</div>
+		<div>params (${count(paramKeys)}): ${
+			!paramKeys.length ? note.blocked :
+			modal(
+				`${id}-parameters`,
+				paramKeys.map(key => `${key}: ${parameters[key]}`).join('<br>'),
+				hashMini(parameters)
+			)
+		}</div>
+		<div>exts (${count(extensions)}): ${
+			!extensions.length ? note.blocked : 
+			modal(
+				`${id}-extensions`,
+				extensions.sort().join('<br>'),
+				hashMini(extensions)
+			)
+		}</div>
+	</div>
+	<div class="col-four${!parameters.UNMASKED_RENDERER_WEBGL ? ' undefined' : lied ? ' rejected' : ''} relative">
+		${
+			confidence ? `<span class="confidence-note">confidence: <span class="scale-up grade-${confidenceGrade}">${confidence}</span></span>` : ''
+		}
+		<div>gpu:</div>
+		<div class="block-text help" title="${
+			confidence ? `\nWebGLRenderingContext.getParameter()\ngpu compressed: ${compressedGPU}\nknown parts: ${parts || 'none'}\ngibberish: ${gibbers || 'none'}\nwarnings: ${warnings.join(', ') || 'none'}` : 'WebGLRenderingContext.getParameter()'
+		}">
+			<div>
+				${parameters.UNMASKED_VENDOR_WEBGL ? parameters.UNMASKED_VENDOR_WEBGL : ''}
+				${!parameters.UNMASKED_RENDERER_WEBGL ? note.blocked : `<br>${parameters.UNMASKED_RENDERER_WEBGL}`}
+			</div>
+		</div>
+	</div>
+	<div class="col-four${lied ? ' rejected' : ''}"><image ${!dataURI ? '' : `width="100%" src="${dataURI}"`}/></div>
+	`
 }

@@ -45,7 +45,7 @@ const getDevice = (width, height) => {
 			return display.device
 		}
 	}
-	return 'unknown'
+	return
 }
 
 export const getScreen = async imports => {
@@ -118,14 +118,14 @@ export const getScreen = async imports => {
 		
 		const data = {
 			device: getDevice(width, height),
-			width: attempt(() => width ? trustInteger('width - invalid return type', width) : undefined),
-			outerWidth: attempt(() => phantomOuterWidth ? trustInteger('outerWidth - invalid return type', phantomOuterWidth) : undefined),
-			availWidth: attempt(() => availWidth ? trustInteger('availWidth - invalid return type', availWidth) : undefined),
-			height: attempt(() => height ? trustInteger('height - invalid return type', height) : undefined),
-			outerHeight: attempt(() => phantomOuterHeight ? trustInteger('outerHeight - invalid return type', phantomOuterHeight) : undefined),
-			availHeight: attempt(() => availHeight ?  trustInteger('availHeight - invalid return type', availHeight) : undefined),
-			colorDepth: attempt(() => colorDepth ? trustInteger('colorDepth - invalid return type', colorDepth) : undefined),
-			pixelDepth: attempt(() => pixelDepth ? trustInteger('pixelDepth - invalid return type', pixelDepth) : undefined),
+			width: attempt(() => screenWidth ? trustInteger('width - invalid return type', screenWidth) : undefined),
+			outerWidth: attempt(() => outerWidth ? trustInteger('outerWidth - invalid return type', outerWidth) : undefined),
+			availWidth: attempt(() => screenAvailWidth ? trustInteger('availWidth - invalid return type', screenAvailWidth) : undefined),
+			height: attempt(() => screenHeight ? trustInteger('height - invalid return type', screenHeight) : undefined),
+			outerHeight: attempt(() => outerHeight ? trustInteger('outerHeight - invalid return type', outerHeight) : undefined),
+			availHeight: attempt(() => screenAvailHeight ?  trustInteger('availHeight - invalid return type', screenAvailHeight) : undefined),
+			colorDepth: attempt(() => screenColorDepth ? trustInteger('colorDepth - invalid return type', screenColorDepth) : undefined),
+			pixelDepth: attempt(() => screenPixelDepth ? trustInteger('pixelDepth - invalid return type', screenPixelDepth) : undefined),
 			lied
 		}
 		logTestResult({ start, test: 'screen', passed: true })
@@ -136,4 +136,68 @@ export const getScreen = async imports => {
 		captureError(error)
 		return
 	}
+}
+
+export const screenHTML = ({ fp, note, hashSlice }) => {
+	if (!fp.screen) {
+		return `
+		<div class="col-six undefined">
+			<strong>Screen</strong>
+			<div>device: ${note.blocked}</div>
+			<div>width: ${note.blocked}</div>
+			<div>outerWidth: ${note.blocked}</div>
+			<div>availWidth: ${note.blocked}</div>
+			<div>height: ${note.blocked}</div>
+			<div>outerHeight: ${note.blocked}</div>
+			<div>availHeight: ${note.blocked}</div>
+			<div>colorDepth: ${note.blocked}</div>
+			<div>pixelDepth: ${note.blocked}</div>
+		</div>
+		<div class="col-six screen-container">
+		</div>`
+	}
+	const {
+		screen: data
+	} = fp
+	const {
+		device,
+		width,
+		outerWidth,
+		availWidth,
+		height,
+		outerHeight,
+		availHeight,
+		colorDepth,
+		pixelDepth,
+		$hash,
+		lied
+	} = data
+	const getDeviceDimensions = (width, height, diameter = 180) => {
+		const aspectRatio = width / height
+		const isPortrait = height > width
+		const deviceHeight = isPortrait ? diameter : diameter / aspectRatio
+		const deviceWidth = isPortrait ? diameter * aspectRatio : diameter
+		return { deviceHeight, deviceWidth }
+	}
+	const { deviceHeight, deviceWidth } = getDeviceDimensions(width, height)
+	return `
+	<div class="col-six${lied ? ' rejected' : ''}">
+		<strong>Screen</strong><span class="${lied ? 'lies ' : ''}hash">${hashSlice($hash)}</span>
+		<div>device: ${device ? device : note.unknown}</div>
+		<div>width: ${width ? width : note.blocked}</div>
+		<div>outerWidth: ${outerWidth ? outerWidth : note.blocked}</div>
+		<div>availWidth: ${availWidth ? availWidth : note.blocked}</div>
+		<div>height: ${height ? height : note.blocked}</div>
+		<div>outerHeight: ${outerHeight ? outerHeight : note.blocked}</div>
+		<div>availHeight: ${availHeight ? availHeight : note.blocked}</div>
+		<div>colorDepth: ${colorDepth ? colorDepth : note.blocked}</div>
+		<div>pixelDepth: ${pixelDepth ? pixelDepth : note.blocked}</div>
+	</div>
+	<div class="col-six screen-container${lied ? ' rejected' : ''}">
+		<style>.screen-frame { width:${deviceWidth}px;height:${deviceHeight}px; }</style>
+		<div class="screen-frame">
+			<div class="screen-glass"></div>
+		</div>
+	</div>
+	`
 }

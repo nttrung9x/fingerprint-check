@@ -43,3 +43,36 @@ export const getConsoleErrors = async imports => {
 		return
 	}
 }
+
+export const consoleErrorsHTML = ({ fp, modal, note, hashSlice }) => {
+	if (!fp.consoleErrors) {
+		return `
+		<div class="col-six undefined">
+			<strong>Error</strong>
+			<div>results: ${note.blocked}</div>
+			<div>
+				<div>${note.blocked}</div>
+			</div>
+		</div>`
+	}
+	const {
+		consoleErrors: {
+			$hash,
+			errors
+		}
+	} = fp
+
+	const results = Object.keys(errors).map(key => {
+		const value = errors[key]
+		return `${+key+1}: ${value}`
+	})
+	return `
+	<div class="col-six">
+		<strong>Error</strong><span class="hash">${hashSlice($hash)}</span>
+		<div>results: ${modal('creep-console-errors', results.join('<br>'))}</div>
+		<div class="blurred" id="error-samples">
+			<div>0% of engine</div>
+		</div>
+	</div>
+	`	
+}

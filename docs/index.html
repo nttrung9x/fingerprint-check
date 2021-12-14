@@ -38,6 +38,20 @@
 					</div>
 					<div id="signature">
 					</div>
+					<div class="flex-grid">
+						<div class="col-four">
+							<strong>Session ID</strong>
+							<div>0</div>
+						</div>
+						<div class="col-four">
+							<strong>Session Loads</strong>
+							<div>0</div>
+						</div>
+						<div class="col-four">
+							<strong>Session Switched</strong>
+							<div>none</div>
+						</div>
+					</div>
 				</div>
 				<div class="flex-grid hidden">
 					<div class="col-four">
@@ -54,109 +68,130 @@
 					</div>
 				</div>
 				<div class="flex-grid hidden">
-					<div class="col-six">
+					<div class="col-four">
 						<strong>WebRTC</strong>
-						<div>ip address:</div>
-						<div>ip candidate:</div>
-						<div>ip connection:</div>
+						<div class="block-text"></div>
 						<div>type:</div>
 						<div>foundation:</div>
 						<div>protocol:</div>
-						<div>get capabilities:</div>
-						<div>sdp capabilities:</div>
+						<div>codecs:</div>
+						<div>codecs sdp:</div>
 					</div>
-					<div class="col-six">
+					<div class="col-four">
 						<strong>Timezone</strong>
-						<div>zone:</div>
-						<div>offset:</div>
-						<div>offset computed:</div>
-						<div>location:</div>
-						<div>measured:</div>
-						<div>epoch:</div>
+						<div class="block-text"></div>
+					</div>
+					<div class="col-four">
+						<strong>Intl</strong>
+						<div class="block-text"></div>
 					</div>
 				</div>
 				<div id="browser-detection" class="flex-grid hidden">
 					<div class="col-eight">
 						<strong>Computing...</strong>
-						<div>client user agent:</div>
-						<div>window object:</div>
-						<div>system styles:</div>
-						<div>computed styles:</div>
-						<div>html element:</div>
-						<div>js runtime (math):</div>
-						<div>js engine (error):</div>
+						<div><span class="icon"></span></div>
+						<div>self:</div>
+						<div>system styles</div>
+						<div>computed styles</div>
+						<div>html element</div>
+						<div>js runtime</div>
+						<div>js engine</div>
+						<div>emojis</div>
+						<div>domRect</div>
+						<div>svg</div>
+						<div>mimeTypes</div>
+						<div>audio</div>
+						<div>canvas</div>
+						<div>textMetrics</div>
+						<div>webgl</div>
+						<div>gpu params</div>
+						<div>gpu model</div>
+						<div>fonts</div>
+						<div>voices</div>
+						<div>screen</div>
+						<div>resistance</div>
 					</div>
-					<div class="col-four icon-container">
+					<div class="col-four icon-prediction-container">
 					</div>
 				</div>
-				<div id="headless-detection" class="flex-grid hidden">
+				<div id="headless-resistance-detection" class="flex-grid hidden">
 					<div class="col-six">
 						<strong>Headless</strong>
 						<div>chromium:</div>
-						<div>like headless:</div>
-						<div>0% matched</div>
+						<div>0% like headless:</div>
+						<div>0% headless:</div>
+						<div>0% stealth:</div>
 					</div>
 					<div class="col-six">
-						<div>headless:</div>
-						<div>0% detected</div>
-						<div>stealth:</div>
-						<div>0% detected</div>
+						<strong>Resistance</strong>
+						<div>privacy:</div>
+						<div>security:</div>
+						<div>mode:</div>
+						<div>extension:</div>
 					</div>
 				</div>
 				<div class="flex-grid hidden">
 					<div class="col-six">
 						<strong>Worker</strong>
-						<div>timezone offset:</div>
-						<div>location:</div>
-						<div>language:</div>
-						<div>deviceMemory:</div>
-						<div>hardwareConcurrency:</div>
-						<div>platform:</div>
-						<div>system:</div>
 						<div>canvas 2d:</div>
-						<div>webgl vendor:</div>
+						<div>textMetrics:</div>
+						<div>fontFaceSet (0):</div>
+						<div>keys (0):</div>
+						<div>permissions (0):</div>
+						<div>codecs (0):</div>
+						<div>timezone:</div>
+						<div>lang:</div>
+						<div>gpu:</div>
+						<div class="block-text"></div>
 					</div>
 					<div class="col-six">
 						<div>device:</div>
 						<div class="block-text"></div>
 						<div>userAgent:</div>
 						<div class="block-text"></div>
-						<div>webgl renderer:</div>
+						<div>userAgentData:</div>
 						<div class="block-text"></div>
 					</div>
 				</div>
 				<div class="flex-grid hidden">
-					<div class="col-six">
-						<strong>Canvas webgl</strong>
-						<div>matching renderer/vendor:</div>
-						<div>matching data URI:</div>
-						<div>webgl:</div>
-						<div>parameters (0):</div>
-						<div>extensions (0):</div>
-						<div>vendor:</div>
-						<div>renderer:</div>
+					<div class="col-four">
+						<strong>WebGL</strong>
+						<div>images:</div>
+						<div>pixels:</div>
+						<div>params (0):</div>
+						<div>exts (0):</div>
+					</div>
+					<div class="col-four">
+						<div>gpu:</div>
 						<div class="block-text"></div>
 					</div>
-					<div class="col-six">
-						<div>webgl2:</div>
-						<div>parameters (0):</div>
-						<div>extensions (0):</div>
-						<div>vendor:</div>
-						<div>renderer:</div>
-						<div class="block-text"></div>
-					</div>
+					<div class="col-four"><image /></div>
 				</div>
 				<div class="flex-grid hidden">
 					<div class="col-six">
 						<strong>Canvas 2d</strong>
+						<div>data:</div>
+						<div>textMetrics:</div>
+						<div>pixel trap:</div>
+						<div class="icon-pixel-container pixels"></div>
 					</div>
 					<div class="col-six">
+						<strong>Fonts</strong>
+						<div>origin (0):</div>
+						<div>load (0):</div>
+						<div class="block-text"></div>
 					</div>
 				</div>
 				<div class="flex-grid hidden">
 					<div class="col-four">
 						<strong>Audio</strong>
-						<div>sample:</div>
+						<div>sum:</div>
+						<div>gain:</div>
+						<div>freq:</div>
+						<div>time:</div>
+						<div>buffer noise:</div>
+						<div>unique:</div>
+						<div>data:</div>
 						<div>copy:</div>
 						<div>values:</div>
 					</div>
@@ -169,17 +204,28 @@
 						<strong>Media</strong>
 						<div>devices (0):</div>
 						<div>constraints:</div>
+						<div>mimes (0):</div>
 					</div>
 				</div>
 				<div class="flex-grid hidden">
 					<div class="col-six">
 						<strong>DOMRect</strong>
-						<div>elements:</div>
+						<div>elems client:</div>
+						<div>range client:</div>
+						<div>elems bounding:</div>
+						<div>range bounding:</div>
 						<div>emojis v13.0:</div>
+						<div>emoji set:</div>
+						<div class="block-text"></div>
 					</div>
 					<div class="col-six">
-						<strong>Fonts</strong>
-						<div>results (0):</div>
+						<strong>SVG</strong>
+						<div>bBox:</div>
+						<div>pointAt:</div>
+						<div>total:</div>
+						<div>extentOfChar:</div>
+						<div>subString:</div>
+						<div>computedText:</div>
 					</div>
 				</div>
 				<div class="flex-grid hidden">
@@ -200,17 +246,30 @@
 				</div>
 				<div class="flex-grid hidden">
 					<div class="col-six">
-						<strong>CSS Media Queries</strong><
+						<div>Features:</div>
+						<div>JS/DOM:</div>
+					</div>
+					<div class="col-six">
+						<div>CSS:</div>
+						<div>Window:</div>
+					</div>
+				</div>
+				<div class="flex-grid hidden">
+					<div class="col-six">
+						<strong>CSS Media Queries</strong>
 						<div>@media:</div>
 						<div>@import:</div>
 						<div>matchMedia:</div>
+						<div>touch device:</div>
 						<div>screen query:</div>
 					</div>
 					<div class="col-six">
 						<strong>Computed Style</strong>
 						<div>keys (0):</div>
-						<div>interface:</div>
 						<div>system styles:</div>
+						<div>
+							<div>system</div>
+						</div>
 						<div class="gradient"></div>
 					</div>
 				</div>
@@ -219,50 +278,57 @@
 						<div class="col-six">
 							<strong>Math</strong>
 							<div>results:</div>
+							<div>
+								<div>0% of engine</div>
+							</div>
+							
 						</div>
 						<div class="col-six">
 							<strong>Error</strong>
 							<div>results:</div>
+							<div>
+								<div>0% of engine</div>
+							</div>
 						</div>
 					</div>
 					<div class="flex-grid">
 						<div class="col-six">
 							<strong>Window</strong>
 							<div>keys (0):</div>
-							<div>moz:</div>
-							<div>webkit:</div>
-							<div>apple:</div>
+							<div>
+								<div>0% of version</div>
+							</div>
 						</div>
 						<div class="col-six">
 							<strong>HTMLElement</strong>
 							<div>keys (0):</div>
+							<div>
+								<div>0% engine</div>
+							</div>
 						</div>
 					</div>
 				</div>
 				<div class="flex-grid" style="visibility:hidden">
 					<div class="col-six">
 						<strong>Navigator</strong>
-						<div>deviceMemory:</div>
-						<div>doNotTrack:</div>
-						<div>globalPrivacyControl:</div>
-						<div>hardwareConcurrency:</div>
-						<div>language:</div>
-						<div>maxTouchPoints:</div>
-						<div>vendor:</div>
-						<div>plugins (0):</div>
-						<div>mimeTypes (0):</div>
-						<div>platform:</div>
-						<div>system:</div>
-						<div>ua architecture:</div>
-						<div>ua model:</div>
-						<div>ua platform:</div>
-						<div>ua platformVersion:</div>
-						<div>ua uaFullVersion:</div>
 						<div>properties (0):</div>
+						<div>bluetooth:</div>
+						<div>codecs (0):</div>
+						<div>dnt:</div>
+						<div>gpc:</div>
+						<div>keyboard:</div>
+						<div>lang:</div>
+						<div>mimeTypes (0):</div>
+						<div>permissions (0):</div>
+						<div>plugins (0):</div>
+						<div>vendor:</div>
+						<div>userAgentData:</div>
+						<div class="block-text"></div>
 					</div>
 					<div class="col-six">
 						<div>device:</div>
 						<div class="block-text"></div>
+						<div>ua parsed:</div>
 						<div>userAgent:</div>
 						<div class="block-text"></div>
 						<div>appVersion:</div>
@@ -281,6 +347,8 @@
 						<br><a class="tests" href="./tests/prototype.html">Prototype</a>
 						<br><a class="tests" href="./tests/domrect.html">DOMRect</a>
 						<br><a class="tests" href="./tests/emojis.html">Emojis</a>
+						<br><a class="tests" href="./tests/math.html">Math</a>
+						<br><a class="tests" href="./tests/machine.html">Machine</a>
 					</div>
 				</div>
 			</div>

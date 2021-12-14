@@ -40,6 +40,8 @@ export const getMaths = async imports => {
 			'pow'
 		]
 		let lied = false
+		let liedCalc = false
+		const phantomMath = phantomDarkness ? phantomDarkness.Math : Math
 		check.forEach(prop => {
 			if (!!lieProps[`Math.${prop}`]) {
 				lied = true
@@ -54,7 +56,7 @@ export const getMaths = async imports => {
 			const res2 = Math[prop](...test)
 			const matching = isNaN(res1) && isNaN(res2) ? true : res1 == res2
 			if (!matching) {
-				lied = true
+				liedCalc = true
 				const mathLie = `expected x and got y`
 				documentLie(`Math.${prop}`, mathLie)
 			}
@@ -193,7 +195,7 @@ export const getMaths = async imports => {
 			
 			['polyfill', [2e-3 ** -100], 'polyfill pow(2e-3, -100)', 7.888609052210102e+269, 7.888609052210126e+269, NaN, NaN]
 		]
-		const phantomMath = phantomDarkness ? phantomDarkness.Math : Math
+		
 		const data = {}
 		fns.forEach(fn => {
 			data[fn[2]] = attempt(() => {
@@ -205,7 +207,7 @@ export const getMaths = async imports => {
 				return { result, chrome, firefox, torBrowser, safari }
 			})
 		})
-		
+
 		logTestResult({ start, test: 'math', passed: true })
 		return { data, lied }
 	}
@@ -214,4 +216,77 @@ export const getMaths = async imports => {
 		captureError(error)
 		return
 	}
+}
+
+export const mathsHTML = ({ fp, modal, note, hashSlice }) => {
+	if (!fp.maths) {
+		return `
+		<div class="col-six undefined">
+			<strong>Math</strong>
+			<div>results: ${note.blocked}</div>
+			<div>
+				<div>${note.blocked}</div>
+			</div>
+			
+		</div>`
+	}
+	const {
+		maths: {
+			data,
+			$hash,
+			lied
+		}
+	} = fp
+
+	const header = `
+	<style>
+		.math-chromium,
+		.math-firefox,
+		.math-tor-browser,
+		.math-safari,
+		.math-blank-false {
+			padding: 2px 8px;
+		}
+		.math-chromium {
+			background: #657fca26;
+		}
+		.math-firefox {
+			background: #657fca54;
+		}
+		.math-tor-browser {
+			background: #ca65b424;
+		}
+		.math-safari {
+			background: #ca65b459;
+		}
+	</style>
+	<div>
+	<br><span class="math-chromium">C - Chromium</span>
+	<br><span class="math-firefox">F - Firefox</span>
+	<br><span class="math-tor-browser">T - Tor Browser</span>
+	<br><span class="math-safari">S - Safari</span>
+	</div>`
+
+	const results = Object.keys(data).map(key => {
+		const value = data[key]
+		const { result, chrome, firefox, torBrowser, safari } = value
+		return `
+		${chrome ? '<span class="math-chromium">C</span>' : '<span class="math-blank-false">-</span>'}${firefox ? '<span class="math-firefox">F</span>' : '<span class="math-blank-false">-</span>'}${torBrowser ? '<span class="math-tor-browser">T</span>' : '<span class="math-blank-false">-</span>'}${safari ? '<span class="math-safari">S</span>' : '<span class="math-blank-false">-</span>'} ${key}`
+	})
+
+	return `
+	<div class="col-six${lied ? ' rejected' : ''}">
+		<strong>Math</strong><span class="${lied ? 'lies ' : ''}hash">${hashSlice($hash)}</span>
+		<div>results: ${
+			!data ? note.blocked : 
+			modal(
+				'creep-maths',
+				header+results.join('<br>')
+			)
+		}</div>
+		<div class="blurred" id="math-samples">
+			<div>0% of engine</div>
+		</div>
+	</div>
+	`
 }

@@ -1,11 +1,11 @@
 const createErrorsCaptured = () => {
 	const errors = []
-  	return {
+	return {
 		getErrors: () => errors,
 		captureError: (error, customMessage = null) => {
 			const type = {
 				Error: true,
-				EvalError: true, 
+				EvalError: true,
 				InternalError: true,
 				RangeError: true,
 				ReferenceError: true,
@@ -20,8 +20,8 @@ const createErrorsCaptured = () => {
 			const { name, message } = error
 			const trustedMessage = (
 				!hasInnerSpace(message) ? undefined :
-				!customMessage ? message :
-				`${message} [${customMessage}]`
+					!customMessage ? message :
+						`${message} [${customMessage}]`
 			)
 			const trustedName = type[name] ? name : undefined
 			errors.push(
@@ -64,8 +64,8 @@ const caniuse = (fn, objChainList = [], args = [], method = false) => {
 	}
 	return (
 		method && args.length ? chain.apply(api, args) :
-		method && !args.length ? chain.apply(api) :
-		chain
+			method && !args.length ? chain.apply(api) :
+				chain
 	)
 }
 
@@ -106,4 +106,17 @@ const getCapturedErrors = async imports => {
 	return { data }
 }
 
-export { captureError, attempt, caniuse, timer, errorsCaptured, getCapturedErrors }
+const errorsHTML = ({ fp, hashSlice, modal }) => {
+	const { capturedErrors: { data, $hash  } } = fp
+	const len = data.length
+	return `
+	<div class="col-four${len ? ' errors': ''}">
+		<strong>Errors</strong>${len ? `<span class="hash">${hashSlice($hash)}</span>` : ''}
+		<div>captured (${!len ? '0' : ''+len}): ${
+			len ? modal('creep-captured-errors', Object.keys(data).map((key, i) => `${i+1}: ${data[key].trustedName} - ${data[key].trustedMessage} `).join('<br>')) : ''
+		}</div>
+	</div>
+	`
+}
+
+export { captureError, attempt, caniuse, timer, errorsCaptured, getCapturedErrors, errorsHTML }

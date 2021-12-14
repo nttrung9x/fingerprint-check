@@ -11,7 +11,7 @@ export const getWebRTCData = imports => {
 	
 	return new Promise(async resolve => {
 		try {
-			await new Promise(setTimeout)
+			await new Promise(setTimeout).catch(e => {})
 			const start = performance.now()
 			let rtcPeerConnection = (
 				window.RTCPeerConnection ||
@@ -66,7 +66,11 @@ export const getWebRTCData = imports => {
 				offerToReceiveVideo: 1
 			})
 			.then(offer => (
-				sdpcapabilities = offer.sdp.match(/((ext|rtp)map|fmtp|rtcp-fb):.+ (.+)/gm).sort()
+				sdpcapabilities = caniuse(
+					() => offer.sdp
+						.match(/((ext|rtp)map|fmtp|rtcp-fb):.+ (.+)/gm)
+						.sort()
+				)
 			))
 			.catch(error => console.error(error))
 	
@@ -87,7 +91,6 @@ export const getWebRTCData = imports => {
 					}
 					// resolve error
 					logTestResult({ test: 'webrtc', passed: false })
-					captureError(new Error('RTCIceCandidate connection failed'))
 					return resolve()
 				}
 
@@ -126,7 +129,6 @@ export const getWebRTCData = imports => {
 			setTimeout(() => {
 				if (!success) {
 					logTestResult({ test: 'webrtc', passed: false })
-					captureError(new Error('RTCIceCandidate connection failed'))
 					return resolve()
 				}
 			}, 1000)
@@ -137,4 +139,97 @@ export const getWebRTCData = imports => {
 			return resolve()
 		}
 	})
+}
+
+
+export const webrtcHTML = ({ fp, hashSlice, hashMini, note, modal }) => {
+	if (!fp.webRTC) {
+		return `
+		<div class="col-four undefined">
+			<strong>WebRTC</strong>
+			<div class="block-text">${note.blocked}</div>
+			<div>type: ${note.blocked}</div>
+			<div>foundation: ${note.blocked}</div>
+			<div>protocol: ${note.blocked}</div>
+			<div>codecs: ${note.blocked}</div>
+			<div>codecs sdp: ${note.blocked}</div>
+		</div>`
+	}
+	const { webRTC } = fp
+	const {
+		ipaddress,
+		candidate,
+		connection,
+		type,
+		foundation,
+		protocol,
+		capabilities,
+		sdpcapabilities,
+		$hash
+	} = webRTC
+	const id = 'creep-webrtc'
+
+	return `
+	<div class="col-four">
+		<strong>WebRTC</strong><span class="hash">${hashSlice($hash)}</span>
+		<div class="block-text"">
+			${ipaddress ? ipaddress : ''}
+			${candidate ? `<br>${candidate}` : ''}
+			${connection ? `<br>${connection}` : ''}
+		</div>
+		<div>type: ${type ? type : note.unsupported}</div>
+		<div>foundation: ${foundation ? foundation : note.unsupported}</div>
+		<div>protocol: ${protocol ? protocol : note.unsupported}</div>
+		<div>codecs: ${
+			!capabilities.receiver && !capabilities.sender ? note.unsupported :
+			modal(
+				`${id}-capabilities`,
+				Object.keys(capabilities).map(modeKey => {
+					const mode = capabilities[modeKey]
+					if (!mode) {
+						return ''
+					}
+					return `
+						<br><div>mimeType [channels] (clockRate) * sdpFmtpLine</div>
+						${
+							Object.keys(mode).map(media => Object.keys(mode[media])
+								.map(key => {
+									return `<br><div><strong>${modeKey} ${media} ${key}</strong>:</div>${
+										mode[media][key].map(obj => {
+											const {
+												channels,
+												clockRate,
+												mimeType,
+												sdpFmtpLine,
+												uri
+											} = obj
+											return `
+												<div>
+												${mimeType||''}
+												${channels ? `[${channels}]`: ''}
+												${clockRate ? `(${clockRate})`: ''}
+												${sdpFmtpLine ? `<br>* ${sdpFmtpLine}` : ''}
+												${uri||''}
+												</div>
+											`
+										}).join('')
+									}`
+								}).join('')
+							).join('')
+						}
+					`
+				}).join(''),
+				hashMini(capabilities)
+			)
+		}</div>
+		<div>codecs sdp: ${
+			!sdpcapabilities ? note.unsupported :
+			modal(
+				`${id}-sdpcapabilities`,
+				sdpcapabilities.join('<br>'),
+				hashMini(sdpcapabilities)
+			)
+		}</div>
+	</div>
+	`	
 }
